@@ -1,47 +1,83 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Polling Best Employee PT SSI</title>
 
   <!-- BOOTSTRAP -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
+  <!-- BOOTSTRAP ICONS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
   <!-- CHART.JS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    body { background: #f5f6fa; }
+    body { background: #eef1f7; }
     .page { display: none; }
-    .star { font-size: 24px; cursor: pointer; color: #ccc; }
-    .star.selected { color: gold; }
+
+    /* Card warna */
+    .card-nominator { border-left: 6px solid #0d6efd; background: #f0f6ff; }
+    .card-polling { border-left: 6px solid #28a745; background: #e9ffef; }
+    .card-hasil { border-left: 6px solid #ffc107; background: #fff8e5; }
+
+    /* Rating star */
+    .star { font-size: 28px; cursor: pointer; color: #ccc; transition: 0.2s; }
+    .star:hover { transform: scale(1.2); }
+    .star.selected { color: #ffbf00; }
+
+    /* Navbar tombol */
+    .nav-btn {
+      border-radius: 30px;
+      padding: 10px 20px;
+      font-weight: bold;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Responsif card */
+    @media (max-width: 576px) {
+      h1 { font-size: 24px; }
+      .star { font-size: 24px; }
+    }
   </style>
 </head>
-
 <body>
 
+  <!-- HEADER -->
   <div class="container py-4 text-center">
-    <h1 class="fw-bold">Polling The Best Employee</h1>
-    <p class="text-muted">Ini Adalah Aplikasi Polling untuk the best employee di kantor pusat PT SSI Jatiwarna.</p>
+    <h1 class="fw-bold">
+      <i class="bi bi-award-fill text-warning"></i> Polling The Best Employee
+    </h1>
+    <p class="text-muted">Aplikasi Polling Employee of The Month PT SSI Jatiwarna.</p>
 
-    <div class="d-flex justify-content-center gap-3 my-3">
-      <button class="btn btn-primary" onclick="showPage('nominator')">Nominator</button>
-      <button class="btn btn-success" onclick="showPage('polling')">Polling</button>
-      <button class="btn btn-warning" onclick="showPage('hasil')">Hasil</button>
+    <!-- MENU NAVIGATION -->
+    <div class="d-flex justify-content-center gap-2 flex-wrap my-3">
+      <button class="btn btn-primary nav-btn" onclick="showPage('nominator')">
+        <i class="bi bi-person-plus-fill me-1"></i> Nominator
+      </button>
+
+      <button class="btn btn-success nav-btn" onclick="showPage('polling')">
+        <i class="bi bi-star-half me-1"></i> Polling
+      </button>
+
+      <button class="btn btn-warning nav-btn" onclick="showPage('hasil')">
+        <i class="bi bi-bar-chart-fill me-1"></i> Hasil
+      </button>
     </div>
   </div>
 
   <!-- ---------------- PAGE NOMINATOR ---------------- -->
   <div class="container page" id="nominator">
-    <div class="card shadow p-4">
-      <h3 class="mb-3">Form Nominator</h3>
-      <p>Pilih maksimal 3 orang dari masing-masing Divisi untuk menjadi Nominator Best Employee</p>
+    <div class="card shadow p-4 card-nominator">
+      <h3 class="mb-3"><i class="bi bi-person-lines-fill"></i> Form Nominator</h3>
+      <p>Pilih maksimal 3 orang dari masing-masing divisi untuk menjadi Nominator.</p>
 
       <form id="formNominator">
         <div class="mb-3">
           <label class="form-label fw-bold">Nama Nominator</label>
-          <input name="nama" type="text" class="form-control" placeholder="Nama" required>
+          <input name="nama" type="text" class="form-control" placeholder="Masukkan Nama" required>
         </div>
 
         <div class="mb-3">
@@ -55,19 +91,21 @@
 
         <div class="mb-3">
           <label class="form-label fw-bold">Keterangan</label>
-          <textarea name="ket" class="form-control" placeholder="Keterangan" required></textarea>
+          <textarea name="ket" class="form-control" placeholder="Tulis alasan nominasi" required></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100">Simpan Nominator</button>
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-save me-1"></i> Simpan Nominator
+        </button>
       </form>
     </div>
   </div>
 
   <!-- ---------------- PAGE POLLING ---------------- -->
   <div class="container page" id="polling">
-    <div class="card shadow p-4">
-      <h3 class="mb-3">Polling Penilaian</h3>
-      <p class="text-muted">Pilih minimal satu atau 3 nama dari divisi Anda atau Divisi lainnya , kemudian beri nilai 1–5</p>
+    <div class="card shadow p-4 card-polling">
+      <h3 class="mb-3"><i class="bi bi-ui-checks-grid"></i> Polling Penilaian</h3>
+      <p class="text-muted">Pilih nama karyawan lalu beri rating 1–5.</p>
 
       <div class="mb-3">
         <label class="form-label fw-bold">Pilih Divisi</label>
@@ -81,41 +119,44 @@
       <div id="listPolling" class="mt-3"></div>
 
       <button onclick="submitPolling()" class="btn btn-success w-100 mt-3">
-        Submit Polling
+        <i class="bi bi-send-check-fill me-1"></i> Submit Polling
       </button>
     </div>
   </div>
 
   <!-- ---------------- PAGE HASIL ---------------- -->
   <div class="container page" id="hasil">
-    <div class="card shadow p-4">
-      <h3 class="mb-3">Top 3 Best Employee</h3>
+    <div class="card shadow p-4 card-hasil">
+      <h3 class="mb-3"><i class="bi bi-trophy-fill text-warning"></i> Top 3 Best Employee</h3>
       <ol id="topHasil" class="fs-5"></ol>
 
       <hr>
 
-      <h4 class="mb-3">Grafik Nilai Rata-rata Semua Nominator</h4>
-      <canvas id="chartHasil" height="120"></canvas>
+      <h4 class="mb-3"><i class="bi bi-bar-chart-line-fill"></i> Grafik Total Nilai (Top 3)</h4>
+      <canvas id="chartHasil" height="140"></canvas>
     </div>
   </div>
 
-
-<!-- ====================== JAVASCRIPT (LOGIKA TIDAK DIUBAH) ====================== -->
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyvNtDANtjbbI5Q5LRdbgzrbydrloC-O8haO1vXvjbGurcnxSZdgqHBxIhwVJm6EV7D/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycby7ZUk0VU4LJJ2me150M_OlM4ZHXDwQrzosjii3odCfk2319njnj69udriUYI1_N530/exec";
 
-let nominators = [];          
-let ratingsMap = {};         
-let chart = null;  // grafik Chart.js
+let nominators = [];      // diisi dari server
+let ratingsMap = {};
+let chart = null;
 
+// tampilkan halaman default: nominator
+showPage('nominator');
+
+// ===================== HALAMAN =====================
 function showPage(id){
   document.querySelectorAll(".page").forEach(p => p.style.display = "none");
   document.getElementById(id).style.display = "block";
 
-  if(id === "polling") tampilPolling();
+  if(id === "polling") loadNominators();
   if(id === "hasil") loadHasil();
 }
 
+// ===================== SIMPAN NOMINATOR =====================
 document.getElementById("formNominator").addEventListener("submit", e => {
   e.preventDefault();
 
@@ -128,15 +169,33 @@ document.getElementById("formNominator").addEventListener("submit", e => {
     return;
   }
 
-  nominators.push({ nama, div, ket });
-
   const payload = { action: "nominator", nama, div, ket };
+
+  // Kita gunakan no-cors agar submit tetap bekerja ketika Google Script belum mengizinkan CORS
   fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
 
   alert("Nominator berhasil disimpan!");
   e.target.reset();
 });
 
+// ===================== LOAD NOMINATOR DARI SERVER =====================
+function loadNominators(){
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "getNominators" })
+  })
+  .then(r => r.json())
+  .then(data => {
+    nominators = data || [];
+    tampilPolling();
+  })
+  .catch(err => {
+    console.error("Error load nominators:", err);
+    document.getElementById("listPolling").innerHTML = "<p class='text-muted'>Gagal mengambil data nominator.</p>";
+  });
+}
+
+// ===================== TAMPIL POLLING =====================
 document.getElementById("myDivision").addEventListener("change", tampilPolling);
 
 function tampilPolling(){
@@ -155,14 +214,14 @@ function tampilPolling(){
 
   list.forEach(n => {
     const item = document.createElement("div");
-    item.className = "p-3 mb-3 border rounded bg-light";
+    item.className = "p-3 mb-3 border rounded bg-light shadow-sm";
     item.dataset.nama = n.nama;
     item.dataset.div = n.div;
 
-    item.innerHTML = `<b>${n.nama}</b><br>`;
+    item.innerHTML = `<b class="fs-5"><i class="bi bi-person-fill"></i> ${n.nama}</b><br>`;
 
-    const starsContainer = document.createElement("div");
-    starsContainer.className = "mt-2";
+    const starsDiv = document.createElement("div");
+    starsDiv.className = "mt-2";
 
     for(let i=1; i<=5; i++){
       let s = document.createElement("span");
@@ -175,10 +234,10 @@ function tampilPolling(){
         setRatingForItem(item, val);
       });
 
-      starsContainer.appendChild(s);
+      starsDiv.appendChild(s);
     }
 
-    item.appendChild(starsContainer);
+    item.appendChild(starsDiv);
     box.appendChild(item);
 
     if(ratingsMap[n.nama]) {
@@ -187,6 +246,7 @@ function tampilPolling(){
   });
 }
 
+// ===================== SET RATING =====================
 function setRatingForItem(itemElement, nilai){
   const nama = itemElement.dataset.nama;
   const div = itemElement.dataset.div;
@@ -202,6 +262,7 @@ function updateStarsVisual(itemElement, nilai){
   });
 }
 
+// ===================== SUBMIT POLLING =====================
 function submitPolling(){
   const keys = Object.keys(ratingsMap);
   if(keys.length === 0){
@@ -209,6 +270,7 @@ function submitPolling(){
     return;
   }
 
+  // Kirim tiap rating ke server (satu baris per rating)
   keys.forEach(k => {
     const entry = ratingsMap[k];
     const payload = {
@@ -219,39 +281,43 @@ function submitPolling(){
       nilai: entry.nilai
     };
 
+    // gunakan no-cors agar tidak gagal di browser bila belum di-setup CORS
     fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
   });
 
   alert(`Berhasil mengirim ${keys.length} rating.`);
   ratingsMap = {};
+
+  // Setelah submit, refresh hasil (opsional) — tampilkan halaman hasil langsung
+  showPage('hasil');
 }
 
+// ===================== HASIL (TOP3 BERDASARKAN TOTAL) =====================
 function loadHasil() {
-  let payload = { action: "getResults" };
-
   fetch(API_URL, {
     method: "POST",
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ action: "getResults" })
   })
   .then(r => r.json())
   .then(data => {
-    let list = document.getElementById("topHasil");
+    const list = document.getElementById("topHasil");
     list.innerHTML = "";
+
+    // Data sekarang berupa array top3 { nama, div, total }
     data.forEach(d => {
-      list.innerHTML += `<li>${d.nama} (${d.div}) — nilai: ${d.avg.toFixed(2)}</li>`;
+      list.innerHTML += `<li>${d.nama} (${d.div}) — total nilai: ${d.total}</li>`;
     });
 
-    // === Update Grafik ===
-    drawChart(data);
-
+    drawChart(data); // chart hanya Top3
   })
-  .catch(err => alert("Gagal mengambil hasil: " + err));
+  .catch(err => {
+    console.error("Gagal mengambil hasil:", err);
+    document.getElementById("topHasil").innerHTML = "<li class='text-muted'>Gagal memuat hasil.</li>";
+  });
 }
 
 function drawChart(data){
   let ctx = document.getElementById("chartHasil").getContext("2d");
-
-  // hancurkan chart lama saat update
   if(chart) chart.destroy();
 
   chart = new Chart(ctx, {
@@ -259,24 +325,20 @@ function drawChart(data){
     data: {
       labels: data.map(d => d.nama),
       datasets: [{
-        label: "Nilai Rata-rata",
-        data: data.map(d => d.avg),
+        label: "Total Nilai",
+        data: data.map(d => d.total),
+        backgroundColor: "#ffcc00",
+        borderColor: "#d4a200",
         borderWidth: 2
       }]
     },
     options: {
       responsive: true,
-      plugins: {
-        legend: { display: true }
-      },
-      scales: {
-        y: { beginAtZero: true, max: 5 }
-      }
+      plugins: { legend: { display: true } },
+      scales: { y: { beginAtZero: true } }
     }
   });
 }
-
 </script>
-
 </body>
 </html>

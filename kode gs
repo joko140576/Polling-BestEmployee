@@ -1,0 +1,74 @@
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const action = data.action;
+
+  if (action === "nominator") return saveNominator(data);
+  if (action === "polling") return savePolling(data);
+  if (action === "getResults") return sendResults();
+
+  return sendJSON({ status: "error", msg: "Unknown action" });
+}
+
+// ==================== SIMPAN NOMINATOR ====================
+function saveNominator(data) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("NOMINATOR_DATA");
+
+  sh.appendRow([
+    new Date(),
+    data.nama,
+    data.div,
+    data.ket
+  ]);
+
+  return sendJSON({ status: "ok" });
+}
+
+// ==================== SIMPAN POLLING =======================
+function savePolling(data) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("POLLING_DATA");
+
+  sh.appendRow([
+    new Date(),
+    data.user,
+    data.nama,
+    data.divisi,
+    Number(data.nilai)
+  ]);
+
+  return sendJSON({ status: "ok" });
+}
+
+// ==================== HASIL TOP 3 ==========================
+function sendResults() {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("POLLING_DATA");
+  const rows = sh.getDataRange().getValues().slice(1);
+
+  const summary = {};
+
+  rows.forEach(r => {
+    const nama = r[2];
+    const div = r[3];
+    const nilai = Number(r[4]);
+
+    if (!summary[nama]) summary[nama] = { nama, div, total: 0, count: 0 };
+    summary[nama].total += nilai;
+    summary[nama].count++;
+  });
+
+  const hasil = Object.values(summary)
+    .map(s => ({
+      nama: s.nama,
+      div: s.div,
+      avg: s.total / s.count
+    }))
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 3);
+
+  return sendJSON(hasil);
+}
+
+function sendJSON(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}

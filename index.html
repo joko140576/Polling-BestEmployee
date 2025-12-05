@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Polling Best Employee PT SSI</title>
+
+  <!-- BOOTSTRAP -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- CHART.JS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { background: #f5f6fa; }
+    .page { display: none; }
+    .star { font-size: 24px; cursor: pointer; color: #ccc; }
+    .star.selected { color: gold; }
+  </style>
+</head>
+
+<body>
+
+  <div class="container py-4 text-center">
+    <h1 class="fw-bold">Polling The Best Employee</h1>
+    <p class="text-muted">Ini Adalah Aplikasi Polling untuk the best employee di kantor pusat PT SSI Jatiwarna.</p>
+
+    <div class="d-flex justify-content-center gap-3 my-3">
+      <button class="btn btn-primary" onclick="showPage('nominator')">Nominator</button>
+      <button class="btn btn-success" onclick="showPage('polling')">Polling</button>
+      <button class="btn btn-warning" onclick="showPage('hasil')">Hasil</button>
+    </div>
+  </div>
+
+  <!-- ---------------- PAGE NOMINATOR ---------------- -->
+  <div class="container page" id="nominator">
+    <div class="card shadow p-4">
+      <h3 class="mb-3">Form Nominator</h3>
+      <p>Pilih maksimal 3 orang dari masing-masing Divisi untuk menjadi Nominator Best Employee</p>
+
+      <form id="formNominator">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Nama Nominator</label>
+          <input name="nama" type="text" class="form-control" placeholder="Nama" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Divisi</label>
+          <select name="div" class="form-select" required>
+            <option value="">Pilih Divisi</option>
+            <option>ina</option><option>frm</option><option>hcc</option>
+            <option>plm</option><option>sbd</option><option>mbs</option><option>ops</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Keterangan</label>
+          <textarea name="ket" class="form-control" placeholder="Keterangan" required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">Simpan Nominator</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ---------------- PAGE POLLING ---------------- -->
+  <div class="container page" id="polling">
+    <div class="card shadow p-4">
+      <h3 class="mb-3">Polling Penilaian</h3>
+      <p class="text-muted">Pilih minimal satu atau 3 nama dari divisi Anda atau Divisi lainnya , kemudian beri nilai 1–5</p>
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">Pilih Divisi</label>
+        <select id="myDivision" class="form-select">
+          <option value="">--- Pilih Divisi  ---</option>
+          <option>ina</option><option>frm</option><option>hcc</option>
+          <option>plm</option><option>sbd</option><option>mbs</option><option>ops</option>
+        </select>
+      </div>
+
+      <div id="listPolling" class="mt-3"></div>
+
+      <button onclick="submitPolling()" class="btn btn-success w-100 mt-3">
+        Submit Polling
+      </button>
+    </div>
+  </div>
+
+  <!-- ---------------- PAGE HASIL ---------------- -->
+  <div class="container page" id="hasil">
+    <div class="card shadow p-4">
+      <h3 class="mb-3">Top 3 Best Employee</h3>
+      <ol id="topHasil" class="fs-5"></ol>
+
+      <hr>
+
+      <h4 class="mb-3">Grafik Nilai Rata-rata Semua Nominator</h4>
+      <canvas id="chartHasil" height="120"></canvas>
+    </div>
+  </div>
+
+
+<!-- ====================== JAVASCRIPT (LOGIKA TIDAK DIUBAH) ====================== -->
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbyvNtDANtjbbI5Q5LRdbgzrbydrloC-O8haO1vXvjbGurcnxSZdgqHBxIhwVJm6EV7D/exec";
+
+let nominators = [];          
+let ratingsMap = {};         
+let chart = null;  // grafik Chart.js
+
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p => p.style.display = "none");
+  document.getElementById(id).style.display = "block";
+
+  if(id === "polling") tampilPolling();
+  if(id === "hasil") loadHasil();
+}
+
+document.getElementById("formNominator").addEventListener("submit", e => {
+  e.preventDefault();
+
+  const nama = e.target.nama.value.trim();
+  const div = e.target.div.value.trim();
+  const ket = e.target.ket.value.trim();
+
+  if(!nama || !div || !ket){
+    alert("Lengkapi semua field!");
+    return;
+  }
+
+  nominators.push({ nama, div, ket });
+
+  const payload = { action: "nominator", nama, div, ket };
+  fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+
+  alert("Nominator berhasil disimpan!");
+  e.target.reset();
+});
+
+document.getElementById("myDivision").addEventListener("change", tampilPolling);
+
+function tampilPolling(){
+  const div = document.getElementById("myDivision").value;
+  const box = document.getElementById("listPolling");
+  box.innerHTML = "";
+
+  if(!div) return;
+
+  const list = nominators.filter(n => n.div === div);
+
+  if(list.length === 0){
+    box.innerHTML = "<p class='text-muted'>Tidak ada nominator di divisi ini.</p>";
+    return;
+  }
+
+  list.forEach(n => {
+    const item = document.createElement("div");
+    item.className = "p-3 mb-3 border rounded bg-light";
+    item.dataset.nama = n.nama;
+    item.dataset.div = n.div;
+
+    item.innerHTML = `<b>${n.nama}</b><br>`;
+
+    const starsContainer = document.createElement("div");
+    starsContainer.className = "mt-2";
+
+    for(let i=1; i<=5; i++){
+      let s = document.createElement("span");
+      s.textContent = "★";
+      s.className = "star me-1";
+      s.dataset.value = i;
+
+      s.addEventListener("click", function(){
+        const val = Number(this.dataset.value);
+        setRatingForItem(item, val);
+      });
+
+      starsContainer.appendChild(s);
+    }
+
+    item.appendChild(starsContainer);
+    box.appendChild(item);
+
+    if(ratingsMap[n.nama]) {
+      updateStarsVisual(item, ratingsMap[n.nama].nilai);
+    }
+  });
+}
+
+function setRatingForItem(itemElement, nilai){
+  const nama = itemElement.dataset.nama;
+  const div = itemElement.dataset.div;
+
+  ratingsMap[nama] = { nama, div, nilai };
+  updateStarsVisual(itemElement, nilai);
+}
+
+function updateStarsVisual(itemElement, nilai){
+  const stars = itemElement.querySelectorAll(".star");
+  stars.forEach((s, idx) => {
+    s.classList.toggle("selected", idx < nilai);
+  });
+}
+
+function submitPolling(){
+  const keys = Object.keys(ratingsMap);
+  if(keys.length === 0){
+    alert("Belum ada rating yang dipilih.");
+    return;
+  }
+
+  keys.forEach(k => {
+    const entry = ratingsMap[k];
+    const payload = {
+      action: "polling",
+      user: "pegawai",
+      nama: entry.nama,
+      divisi: entry.div,
+      nilai: entry.nilai
+    };
+
+    fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+  });
+
+  alert(`Berhasil mengirim ${keys.length} rating.`);
+  ratingsMap = {};
+}
+
+function loadHasil() {
+  let payload = { action: "getResults" };
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    let list = document.getElementById("topHasil");
+    list.innerHTML = "";
+    data.forEach(d => {
+      list.innerHTML += `<li>${d.nama} (${d.div}) — nilai: ${d.avg.toFixed(2)}</li>`;
+    });
+
+    // === Update Grafik ===
+    drawChart(data);
+
+  })
+  .catch(err => alert("Gagal mengambil hasil: " + err));
+}
+
+function drawChart(data){
+  let ctx = document.getElementById("chartHasil").getContext("2d");
+
+  // hancurkan chart lama saat update
+  if(chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: data.map(d => d.nama),
+      datasets: [{
+        label: "Nilai Rata-rata",
+        data: data.map(d => d.avg),
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        y: { beginAtZero: true, max: 5 }
+      }
+    }
+  });
+}
+
+</script>
+
+</body>
+</html>

@@ -16,19 +16,16 @@
 
   <style>
     body { background: #eef1f7; }
-    .page { display: none; }
+    .page { display: none; } 
 
-    /* Card warna */
     .card-nominator { border-left: 6px solid #0d6efd; background: #f0f6ff; }
     .card-polling { border-left: 6px solid #28a745; background: #e9ffef; }
     .card-hasil { border-left: 6px solid #ffc107; background: #fff8e5; }
 
-    /* Rating star */
     .star { font-size: 28px; cursor: pointer; color: #ccc; transition: 0.2s; }
     .star:hover { transform: scale(1.2); }
     .star.selected { color: #ffbf00; }
 
-    /* Navbar tombol */
     .nav-btn {
       border-radius: 30px;
       padding: 10px 20px;
@@ -36,10 +33,24 @@
       box-shadow: 0 3px 6px rgba(0,0,0,0.1);
     }
 
-    /* Responsif card */
-    @media (max-width: 576px) {
-      h1 { font-size: 24px; }
-      .star { font-size: 24px; }
+    #loadingHasil {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .loader-spin {
+      width: 55px;
+      height: 55px;
+      border: 7px solid #ddd;
+      border-top-color: #ffc107;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -52,7 +63,6 @@
     </h1>
     <p class="text-muted">Aplikasi Polling Employee of The Month PT SSI Jatiwarna.</p>
 
-    <!-- MENU NAVIGATION -->
     <div class="d-flex justify-content-center gap-2 flex-wrap my-3">
       <button class="btn btn-primary nav-btn" onclick="showPage('nominator')">
         <i class="bi bi-person-plus-fill me-1"></i> Nominator
@@ -68,7 +78,7 @@
     </div>
   </div>
 
-  <!-- ---------------- PAGE NOMINATOR ---------------- -->
+  <!-- PAGE NOMINATOR -->
   <div class="container page" id="nominator">
     <div class="card shadow p-4 card-nominator">
       <h3 class="mb-3"><i class="bi bi-person-lines-fill"></i> Form Nominator</h3>
@@ -101,7 +111,7 @@
     </div>
   </div>
 
-  <!-- ---------------- PAGE POLLING ---------------- -->
+  <!-- PAGE POLLING -->
   <div class="container page" id="polling">
     <div class="card shadow p-4 card-polling">
       <h3 class="mb-3"><i class="bi bi-ui-checks-grid"></i> Polling Penilaian</h3>
@@ -124,15 +134,21 @@
     </div>
   </div>
 
-  <!-- ---------------- PAGE HASIL ---------------- -->
+  <!-- PAGE HASIL -->
   <div class="container page" id="hasil">
     <div class="card shadow p-4 card-hasil">
       <h3 class="mb-3"><i class="bi bi-trophy-fill text-warning"></i> Top 3 Best Employee</h3>
+
+      <div id="loadingHasil">
+        <div class="loader-spin"></div>
+        <p class="text-muted mt-2">Memuat data...</p>
+      </div>
+
       <ol id="topHasil" class="fs-5"></ol>
 
       <hr>
-
       <h4 class="mb-3"><i class="bi bi-bar-chart-line-fill"></i> Grafik Total Nilai (Top 3)</h4>
+
       <canvas id="chartHasil" height="140"></canvas>
     </div>
   </div>
@@ -140,14 +156,13 @@
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycby7ZUk0VU4LJJ2me150M_OlM4ZHXDwQrzosjii3odCfk2319njnj69udriUYI1_N530/exec";
 
-let nominators = [];      // diisi dari server
+let nominators = [];
 let ratingsMap = {};
 let chart = null;
 
-// tampilkan halaman default: nominator
-showPage('nominator');
+// default: semua page disembunyikan
+document.querySelectorAll(".page").forEach(p => p.style.display = "none");
 
-// ===================== HALAMAN =====================
 function showPage(id){
   document.querySelectorAll(".page").forEach(p => p.style.display = "none");
   document.getElementById(id).style.display = "block";
@@ -156,46 +171,37 @@ function showPage(id){
   if(id === "hasil") loadHasil();
 }
 
-// ===================== SIMPAN NOMINATOR =====================
+// SIMPAN NOMINATOR
 document.getElementById("formNominator").addEventListener("submit", e => {
   e.preventDefault();
-
   const nama = e.target.nama.value.trim();
   const div = e.target.div.value.trim();
   const ket = e.target.ket.value.trim();
 
-  if(!nama || !div || !ket){
-    alert("Lengkapi semua field!");
-    return;
-  }
+  if(!nama || !div || !ket){ alert("Lengkapi semua field!"); return; }
 
-  const payload = { action: "nominator", nama, div, ket };
-
-  // Kita gunakan no-cors agar submit tetap bekerja ketika Google Script belum mengizinkan CORS
-  fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-
+  fetch(API_URL, { method:"POST", mode:"no-cors", body:JSON.stringify({ action:"nominator", nama, div, ket }) });
   alert("Nominator berhasil disimpan!");
   e.target.reset();
 });
 
-// ===================== LOAD NOMINATOR DARI SERVER =====================
+// LOAD NOMINATOR
 function loadNominators(){
   fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({ action: "getNominators" })
+    method:"POST",
+    body: JSON.stringify({ action:"getNominators" })
   })
-  .then(r => r.json())
-  .then(data => {
+  .then(r=>r.json())
+  .then(data=>{
     nominators = data || [];
     tampilPolling();
   })
-  .catch(err => {
-    console.error("Error load nominators:", err);
+  .catch(()=>{
     document.getElementById("listPolling").innerHTML = "<p class='text-muted'>Gagal mengambil data nominator.</p>";
   });
 }
 
-// ===================== TAMPIL POLLING =====================
+// TAMPIL POLLING
 document.getElementById("myDivision").addEventListener("change", tampilPolling);
 
 function tampilPolling(){
@@ -205,20 +211,20 @@ function tampilPolling(){
 
   if(!div) return;
 
-  const list = nominators.filter(n => n.div === div);
+  const list = nominators.filter(n=>n.div === div);
 
   if(list.length === 0){
     box.innerHTML = "<p class='text-muted'>Tidak ada nominator di divisi ini.</p>";
     return;
   }
 
-  list.forEach(n => {
+  list.forEach(n=>{
     const item = document.createElement("div");
     item.className = "p-3 mb-3 border rounded bg-light shadow-sm";
     item.dataset.nama = n.nama;
     item.dataset.div = n.div;
 
-    item.innerHTML = `<b class="fs-5"><i class="bi bi-person-fill"></i> ${n.nama}</b><br>`;
+    item.innerHTML = `<b class="fs-5"><i class='bi bi-person-fill'></i> ${n.nama}</b><br>`;
 
     const starsDiv = document.createElement("div");
     starsDiv.className = "mt-2";
@@ -230,8 +236,7 @@ function tampilPolling(){
       s.dataset.value = i;
 
       s.addEventListener("click", function(){
-        const val = Number(this.dataset.value);
-        setRatingForItem(item, val);
+        setRatingForItem(item, Number(this.dataset.value));
       });
 
       starsDiv.appendChild(s);
@@ -239,83 +244,83 @@ function tampilPolling(){
 
     item.appendChild(starsDiv);
     box.appendChild(item);
-
-    if(ratingsMap[n.nama]) {
-      updateStarsVisual(item, ratingsMap[n.nama].nilai);
-    }
   });
 }
 
-// ===================== SET RATING =====================
-function setRatingForItem(itemElement, nilai){
-  const nama = itemElement.dataset.nama;
-  const div = itemElement.dataset.div;
+// SET RATING
+function setRatingForItem(item, nilai){
+  const nama = item.dataset.nama;
+  const div = item.dataset.div;
 
   ratingsMap[nama] = { nama, div, nilai };
-  updateStarsVisual(itemElement, nilai);
+  updateStarsVisual(item, nilai);
 }
 
-function updateStarsVisual(itemElement, nilai){
-  const stars = itemElement.querySelectorAll(".star");
-  stars.forEach((s, idx) => {
-    s.classList.toggle("selected", idx < nilai);
-  });
+function updateStarsVisual(item, nilai){
+  const stars = item.querySelectorAll(".star");
+  stars.forEach((s, idx)=>{ s.classList.toggle("selected", idx < nilai); });
 }
 
-// ===================== SUBMIT POLLING =====================
+// SUBMIT POLLING
 function submitPolling(){
   const keys = Object.keys(ratingsMap);
-  if(keys.length === 0){
-    alert("Belum ada rating yang dipilih.");
-    return;
-  }
+  if(keys.length === 0){ alert("Belum ada rating yang dipilih."); return; }
 
-  // Kirim tiap rating ke server (satu baris per rating)
-  keys.forEach(k => {
+  keys.forEach(k=>{
     const entry = ratingsMap[k];
-    const payload = {
-      action: "polling",
-      user: "pegawai",
-      nama: entry.nama,
-      divisi: entry.div,
-      nilai: entry.nilai
-    };
-
-    // gunakan no-cors agar tidak gagal di browser bila belum di-setup CORS
-    fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+    fetch(API_URL, {
+      method:"POST",
+      mode:"no-cors",
+      body: JSON.stringify({
+        action:"polling",
+        user:"pegawai",
+        nama:entry.nama,
+        divisi:entry.div,
+        nilai:entry.nilai
+      })
+    });
   });
 
   alert(`Berhasil mengirim ${keys.length} rating.`);
   ratingsMap = {};
-
-  // Setelah submit, refresh hasil (opsional) — tampilkan halaman hasil langsung
-  showPage('hasil');
 }
 
-// ===================== HASIL (TOP3 BERDASARKAN TOTAL) =====================
+// ===================== FIX LOADING + HASIL =====================
 function loadHasil() {
+
+  document.getElementById("loadingHasil").style.display = "block";
+  document.getElementById("topHasil").style.display = "none";
+  document.getElementById("chartHasil").style.display = "none";
+
   fetch(API_URL, {
     method: "POST",
     body: JSON.stringify({ action: "getResults" })
   })
   .then(r => r.json())
   .then(data => {
+
+    document.getElementById("loadingHasil").style.display = "none";
+    document.getElementById("topHasil").style.display = "block";
+    document.getElementById("chartHasil").style.display = "block";
+
     const list = document.getElementById("topHasil");
     list.innerHTML = "";
 
-    // Data sekarang berupa array top3 { nama, div, total }
     data.forEach(d => {
       list.innerHTML += `<li>${d.nama} (${d.div}) — total nilai: ${d.total}</li>`;
     });
 
-    drawChart(data); // chart hanya Top3
+    drawChart(data);
   })
-  .catch(err => {
-    console.error("Gagal mengambil hasil:", err);
-    document.getElementById("topHasil").innerHTML = "<li class='text-muted'>Gagal memuat hasil.</li>";
+  .catch(() => {
+    document.getElementById("loadingHasil").style.display = "none";
+    document.getElementById("topHasil").style.display = "block";
+    document.getElementById("topHasil").innerHTML =
+      "<li class='text-muted'>Gagal memuat data hasil.</li>";
   });
 }
 
+// GAMBAR CHART
 function drawChart(data){
   let ctx = document.getElementById("chartHasil").getContext("2d");
   if(chart) chart.destroy();

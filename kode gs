@@ -1,23 +1,33 @@
+// Google Apps Script (Code.gs)
+// Pastikan sheet "NOMINATOR_DATA" dan "POLLING_DATA" ada dan headernya sesuai.
+
 function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
-  const action = data.action;
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
 
-  if (action === "nominator") return saveNominator(data);
-  if (action === "polling") return savePolling(data);
-  if (action === "getResults") return sendResults();
+    if (action === "nominator") return saveNominator(data);
+    if (action === "polling") return savePolling(data);
+    if (action === "getResults") return sendResults();       // Top3 berdasarkan TOTAL
+    if (action === "getNominators") return getNominators();   // Ambil semua nominator
 
-  return sendJSON({ status: "error", msg: "Unknown action" });
+    return sendJSON({ status: "error", msg: "Unknown action" });
+  } catch (err) {
+    return sendJSON({ status: "error", msg: err.message });
+  }
 }
 
 // ==================== SIMPAN NOMINATOR ====================
 function saveNominator(data) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("NOMINATOR_DATA");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName("NOMINATOR_DATA");
+  if (!sh) throw new Error("Sheet NOMINATOR_DATA tidak ditemukan");
 
   sh.appendRow([
     new Date(),
-    data.nama,
-    data.div,
-    data.ket
+    data.nama || "",
+    data.div || "",
+    data.ket || ""
   ]);
 
   return sendJSON({ status: "ok" });
@@ -25,46 +35,71 @@ function saveNominator(data) {
 
 // ==================== SIMPAN POLLING =======================
 function savePolling(data) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("POLLING_DATA");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName("POLLING_DATA");
+  if (!sh) throw new Error("Sheet POLLING_DATA tidak ditemukan");
 
   sh.appendRow([
     new Date(),
-    data.user,
-    data.nama,
-    data.divisi,
-    Number(data.nilai)
+    data.user || "",
+    data.nama || "",
+    data.divisi || "",
+    Number(data.nilai) || 0
   ]);
 
   return sendJSON({ status: "ok" });
 }
 
-// ==================== HASIL TOP 3 ==========================
+// ==================== AMBIL SEMUA NOMINATOR ===============
+function getNominators() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName("NOMINATOR_DATA");
+  if (!sh) return sendJSON([]);
+
+  const rows = sh.getDataRange().getValues();
+  if (rows.length <= 1) return sendJSON([]);
+
+  // Buang header
+  const dataRows = rows.slice(1);
+  const list = dataRows.map(r => ({
+    nama: r[1],
+    div: r[2],
+    ket: r[3]
+  }));
+
+  return sendJSON(list);
+}
+
+// ==================== HASIL TOP 3 BERDASARKAN TOTAL ===============
 function sendResults() {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("POLLING_DATA");
-  const rows = sh.getDataRange().getValues().slice(1);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName("POLLING_DATA");
+  if (!sh) return sendJSON([]);
 
+  const rows = sh.getDataRange().getValues();
+  if (rows.length <= 1) return sendJSON([]);
+
+  const dataRows = rows.slice(1);
+
+  // summary by name: total nilai
   const summary = {};
+  dataRows.forEach(r => {
+    const nama = r[2] || "";
+    const div = r[3] || "";
+    const nilai = Number(r[4]) || 0;
 
-  rows.forEach(r => {
-    const nama = r[2];
-    const div = r[3];
-    const nilai = Number(r[4]);
-
-    if (!summary[nama]) summary[nama] = { nama, div, total: 0, count: 0 };
+    if (!summary[nama]) summary[nama] = { nama, div, total: 0 };
     summary[nama].total += nilai;
-    summary[nama].count++;
   });
 
-  const hasil = Object.values(summary)
-    .map(s => ({
-      nama: s.nama,
-      div: s.div,
-      avg: s.total / s.count
-    }))
-    .sort((a, b) => b.avg - a.avg)
-    .slice(0, 3);
+  // ubah jadi array dan urutkan berdasarkan total desc
+  const sorted = Object.values(summary)
+    .sort((a, b) => b.total - a.total);
 
-  return sendJSON(hasil);
+  // Ambil Top 3
+  const top3 = sorted.slice(0, 3);
+
+  return sendJSON(top3);
 }
 
 function sendJSON(obj) {

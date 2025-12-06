@@ -22,6 +22,20 @@
     .card-polling { border-left: 6px solid #28a745; background: #e9ffef; }
     .card-hasil { border-left: 6px solid #ffc107; background: #fff8e5; }
 
+    .list-box {
+    border: 2px solid #ffc107;       /* warna gold */
+    border-radius: 12px;             /* sudut membulat */
+    padding: 20px;
+    display: inline-block;           /* agar tetap center */
+    background: #fffbea;             /* warna lembut */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* bayangan halus */
+  }
+
+  .list-box li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
     .star { font-size: 28px; cursor: pointer; color: #ccc; transition: 0.2s; }
     .star:hover { transform: scale(1.2); }
     .star.selected { color: #ffbf00; }
@@ -60,17 +74,27 @@
       <i class="bi bi-award-fill text-warning"></i> Polling The Best Employee
     </h1>
     <p class="text-muted">Aplikasi Polling Employee of The Month PT SSI Jatiwarna.</p>
-    <ul>
-      <li> 1. Pilihlah kandidat yang menurut anda proper untuk menjadi Nominator Best Of Employee</li>
-      <li> 2. Berikan keterangan , mengapa orang tersebut pantas mendapatkan Best of Employee </li>
-      <li> 3. Silahkan semua pegawai bisa memilih kandidat siapa yang pantas untuk mendapatkan Best of Employee </li>
-      <li> 4. Yang menang akan diambil Top 3 Rank yang merupakan akumulasi penilaian dari semua partisipan pegawai  </li> 
-    </ul> 
+    <!-- LIST TETAP DI TENGAH, ISI RATA KIRI -->
+    <div class="list-box text-start">
+    <ul class="m-0">
+      <li>Pilihlah kandidat yang menurut anda proper untuk menjadi Nominator Best Of Employee</li>
+      <li>Berikan keterangan, mengapa orang tersebut pantas mendapatkan Best of Employee</li>
+      <li>Silahkan semua pegawai bisa memilih kandidat siapa yang pantas untuk mendapatkan Best of Employee</li>
+      <li>Yang menang akan diambil Top 3 Rank sebagai hasil akumulasi penilaian semua pegawai</li>
+    </ul>
+  </div>
+
     <br>
+  </div>
 
     <div class="d-flex justify-content-center gap-2 flex-wrap my-3">
       <button class="btn btn-primary nav-btn" onclick="showPage('nominator')">
         <i class="bi bi-person-plus-fill me-1"></i> Nominator
+      </button>
+
+      <!-- 🔥 BUTTON LIHAT NOMINATOR (BARU) -->
+      <button class="btn btn-secondary nav-btn" data-bs-toggle="modal" data-bs-target="#modalNominator" onclick="loadTableNominator()">
+        <i class="bi bi-table me-1"></i> Lihat Nominator
       </button>
 
       <button class="btn btn-success nav-btn" onclick="showPage('polling')">
@@ -81,10 +105,7 @@
         <i class="bi bi-bar-chart-fill me-1"></i> Hasil
       </button>
 
-      <!-- 🔥 BUTTON LIHAT NOMINATOR (BARU) -->
-      <button class="btn btn-secondary nav-btn" data-bs-toggle="modal" data-bs-target="#modalNominator" onclick="loadTableNominator()">
-        <i class="bi bi-table me-1"></i> Lihat Nominator
-      </button>
+      
     </div>
   </div>
 
@@ -186,7 +207,7 @@
               </tr>
             </thead>
             <tbody id="tableNominatorBody">
-              <tr><td colspan="3" class="text-center text-muted">Memuat data...</td></tr>
+              <tr><td colspan="3" class="text-center text-muted">Tunggu Sebentar sedang Loading data !!...</td></tr>
             </tbody>
           </table>
         </div>
@@ -390,7 +411,7 @@ function drawChart(data){
    ------------------------------------------------------ */
 function loadTableNominator(){
   const tbody = document.getElementById("tableNominatorBody");
-  tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">Memuat data...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">tunggu ! sedang Memuat data...</td></tr>`;
 
   fetch(API_URL, {
     method:"POST",
